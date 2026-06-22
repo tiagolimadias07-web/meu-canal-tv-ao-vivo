@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha TV Online</title>
+    <title>CANAL 040 - Ao Vivo</title>
     
     <!-- Player de Vídeo Profissional -->
     <link href="https://zencdn.net" rel="stylesheet" />
@@ -27,24 +27,24 @@
             align-items: center;
         }
         
-        /* 🔴 ESTILO DO AVISO "AO VIVO" PISCANDO */
+        /* 🔴 ESTILO DO AVISO "AO VIVO" AMPLIADO E PISCANDO */
         .status-ao-vivo {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #ff3333; /* Vermelho vivo */
-            letter-spacing: 2px;
-            margin-bottom: 5px;
+            gap: 12px;           /* Aumentou o espaço entre a bola e o texto */
+            font-size: 1.4rem;   /* Aumentou o tamanho do texto AO VIVO */
+            font-weight: 900;    /* Deixou a letra mais grossa */
+            color: #ff3333;
+            letter-spacing: 3px; /* Espaçamento maior entre as letras */
+            margin-bottom: 10px;
             animation: piscarGeral 1.5s infinite;
         }
         .bola-vermelha {
-            width: 10px;
-            height: 10px;
+            width: 16px;         /* Aumentou o tamanho da bolinha */
+            height: 16px;        /* Aumentou o tamanho da bolinha */
             background-color: #ff3333;
             border-radius: 50%;
-            box-shadow: 0 0 10px #ff3333;
+            box-shadow: 0 0 15px #ff3333; /* Brilho maior em volta da bola */
         }
         @keyframes piscarGeral {
             0% { opacity: 1; }
@@ -52,15 +52,14 @@
             100% { opacity: 1; }
         }
 
-        /* ⚪ NOME DO CANAL EM BRANCO COM DETALHE EM AZUL 🟦 */
+        /* 🟦 NOME DO CANAL: CANAL 040 EM AZUL BRILHANTE */
         h1 {
-            color: #ffffff; /* Branco */
+            color: #007bff; 
             margin: 0 0 5px 0;
-            font-size: 2.5rem;
+            font-size: 3.5rem;
+            letter-spacing: 2px;
+            font-weight: bold;
             text-transform: uppercase;
-        }
-        .destaque-azul {
-            color: #007bff; /* Azul brilhante */
         }
 
         p {
@@ -172,14 +171,14 @@
 <body>
 
     <header>
-        <!-- 🔴 Tag de Status "AO VIVO" -->
+        <!-- 🔴 Tag de Status "AO VIVO" Ampliada -->
         <div class="status-ao-vivo">
             <div class="bola-vermelha"></div>
             <span>AO VIVO</span>
         </div>
         
-        <!-- ⚪ Título com o 040 em azul 🟦 -->
-        <h1>CANAL 040 <span class="destaque-azul">040</span></h1>
+        <!-- 🟦 Nome do canal oficial em azul -->
+        <h1>CANAL 040</h1>
         <p>Acompanhe nossa programação diária ao vivo</p>
     </header>
 
@@ -199,7 +198,7 @@
             <div class="epg-hora">07:00</div>
             <div class="epg-info">
                 <div class="epg-programa">Grade da Manhã (Novelas e Variedades)</div>
-                <div class="epg-desc">Acompanhe nossa selection de conteúdos matutinos em sequência.</div>
+                <div class="epg-desc">Acompanhe nossa seleção de conteúdos matutinos em sequência.</div>
             </div>
             <div class="barra-progresso" id="barra-7"></div>
         </div>
