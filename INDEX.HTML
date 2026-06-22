@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Web TV Online</title>
+    
+    <!-- Player de Vídeo Profissional -->
+    <link href="https://zencdn.net" rel="stylesheet" />
+    
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #e50914;
+            margin: 0 0 5px 0;
+            font-size: 2.5rem;
+        }
+        p {
+            color: #aaa;
+            margin: 0;
+        }
+        .container-tv {
+            width: 100%;
+            max-width: 854px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0px 10px 30px rgba(0,0,0,0.7);
+            border: 1px solid #222;
+            margin-bottom: 30px;
+        }
+        .video-js {
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 16 / 9;
+        }
+        
+        /* 📺 GUIA DE PROGRAMAÇÃO (EPG) */
+        .container-epg {
+            width: 100%;
+            max-width: 854px;
+            background: #181818;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
+            border: 1px solid #2a2a2a;
+            box-sizing: border-box;
+        }
+        .epg-titulo {
+            font-size: 1.3rem;
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e50914;
+            padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ao-vivo-badge {
+            background-color: #e50914;
+            color: white;
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .epg-linha {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 15px 10px;
+            border-bottom: 1px solid #222;
+            overflow: hidden;
+        }
+        .epg-linha:last-child {
+            border-bottom: none;
+        }
+        .epg-hora {
+            font-weight: bold;
+            color: #e50914;
+            width: 80px;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+            z-index: 2;
+        }
+        .epg-info {
+            flex-grow: 1;
+            z-index: 2;
+        }
+        .epg-programa {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .epg-desc {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Bloco ativo */
+        .no-ar {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 4px solid #0056b3;
+        }
+
+        /* 🟦 LINHA AZUL DE PROGRESSO DO BLOCO */
+        .barra-progresso {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 4px;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.5s ease;
+            z-index: 1;
+        }
+        
+        footer {
+            margin-top: 40px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MINHA WEB TV</h1>
+        <p>Acompanhe nossa programação diária ao vivo</p>
+    </header>
+
+    <div class="container-tv">
+        <video id="player-webtv" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" autoplay muted>
+            <p class="vjs-no-js">Ative o JavaScript para assistir.</p>
+        </video>
+    </div>
+
+    <!-- 🗺️ GUIA DE PROGRAMAÇÃO (EPG) -->
+    <div class="container-epg">
+        <div class="epg-titulo">
+            <span>Grade de Programação</span>
+            <span class="ao-vivo-badge">NO AR</span>
+        </div>
+        
+        <!-- Bloco 1 (Manhã) -->
+        <div class="epg-linha" id="bloco-7">
+            <div class="epg-hora">07:00</div>
+            <div class="epg-info">
+                <div class="epg-programa">Grade da Manhã (Novelas e Variedades)</div>
+                <div class="epg-desc">Acompanhe nossa seleção de conteúdos matutinos em sequência.</div>
+            </div>
+            <div class="barra-progresso" id="barra-7"></div>
+        </div>
+
+        <!-- Bloco 2 (Tarde) -->
+        <div class="epg-linha" id="bloco-12">
+            <div class="epg-hora">12:00</div>
+            <div class="epg-info">
+                <div class="epg-programa">Cine Aventura e Seriados</div>
+                <div class="epg-desc">Grandes produções de entretenimento para a sua tarde.</div>
+            </div>
+            <div class="barra-progresso" id="barra-12"></div>
+        </div>
+
+        <!-- Bloco 3 (Noite) -->
+        <div class="epg-linha" id="bloco-17">
+            <div class="epg-hora">17:00</div>
+            <div class="epg-info">
+                <div class="epg-programa">Maratona Especial e Telejornais</div>
+                <div class="epg-desc">Os programas mais aguardados do dia reunidos na sua noite.</div>
+            </div>
+            <div class="barra-progresso" id="barra-17"></div>
+        </div>
+
+        <!-- Bloco 4 (Final) -->
+        <div class="epg-linha" id="bloco-22">
+            <div class="epg-hora">22:00</div>
+            <div class="epg-info">
+                <div class="epg-programa">Sessão Corujão (Filmes de Ação/Terror)</div>
+                <div class="epg-desc">Entretenimento garantido na reta final da programação até 00:00.</div>
+            </div>
+            <div class="barra-progresso" id="barra-22"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 - Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="https://zencdn.net"></script>
+
+    <!-- 🤖 SCRIPT DE IA: Controla a segurança e a barra de progresso automática por bloco -->
+    <script>
+        // SEGURANÇA E TOKENS DO PLAYER
+        const tempoAgora = Math.floor(Date.now() / 1000);
+        const tempoExpira = tempoAgora + 600; 
+        const linkBaseCloudflare = "https://workers.dev";
+        var player = videojs('player-webtv');
+        player.src({ src: `${linkBaseCloudflare}?token=Ativo&exp=${tempoExpira}`, type: 'application/x-mpegURL' });
+
+        // CONTROLE AUTOMÁTICO DA LINHA AZUL
+        function gerenciarProgressoFixo() {
+            const agora = new Date();
+            const hora = agora.getHours();
+            const minuto = agora.getMinutes();
+            const minutosHoje = (hora * 60) + minuto;
+
+            // Limpa o visual antigo
+            document.querySelectorAll('.epg-linha').forEach(l => l.classList.remove('no-ar'));
+            document.querySelectorAll('.barra-progresso').forEach(b => b.style.width = '0%');
+
+            let inicioBloco = 0;
+            let duracaoBloco = 0;
+            let barraId = "";
+            let linhaId = "";
+
+            // Encaixa o progresso direto nos blocos fixos do servidor do GitHub
+            if (hora >= 7 && hora < 12) {
+                inicioBloco = 7 * 60;
+                duracaoBloco = 5 * 60; // 5 horas
+                barraId = "barra-7";
+                linhaId = "bloco-7";
+            } 
+            else if (hora >= 12 && hora < 17) {
+                inicioBloco = 12 * 60;
+                duracaoBloco = 5 * 60; // 5 horas
+                barraId = "barra-12";
+                linhaId = "bloco-12";
+            } 
+            else if (hora >= 17 && hora < 22) {
+                inicioBloco = 17 * 60;
+                duracaoBloco = 5 * 60; // 5 horas
+                barraId = "barra-17";
+                linhaId = "bloco-17";
+            } 
+            else if (hora >= 22 && hora < 24) {
+                inicioBloco = 22 * 60;
+                duracaoBloco = 2 * 60; // 2 horas (até meia-noite)
+                barraId = "barra-22";
+                linhaId = "bloco-22";
+            }
+
+            // Move a linha azul automaticamente com base no relógio do visitante
+            if (barraId !== "") {
+                document.getElementById(linhaId).classList.add('no-ar');
+                const progressoMinutos = minutosHoje - inicioBloco;
+                const porcentagem = (progressoMinutos / duracaoBloco) * 100;
+                document.getElementById(barraId).style.width = porcentagem + "%";
+            }
+        }
+
+        // Executa e atualiza a cada 5 segundos sozinho
+        gerenciarProgressoFixo();
+        setInterval(gerenciarProgressoFixo, 5000);
+    </script>
+
+</body>
+</html>
