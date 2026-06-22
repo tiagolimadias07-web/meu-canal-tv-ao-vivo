@@ -2,11 +2,11 @@ name: Web TV CANAL 040
 
 on:
   schedule:
-    - cron: '0 10 * * *' # 07:00 da manhã no Brasil - Inicia Bloco da Manhã
-    - cron: '0 15 * * *' # 12:00 da tarde no Brasil - Inicia Bloco da Tarde
-    - cron: '0 20 * * *' # 17:00 da tarde no Brasil - Inicia Bloco da Noite
-    - cron: '0 1 * * *'  # 22:00 da noite no Brasil - Inicia Bloco Final
-  workflow_dispatch:     # Permite ligar o canal manualmente para testes
+    - cron: '0 10 * * *' # 07:00 BRT
+    - cron: '0 15 * * *' # 12:00 BRT
+    - cron: '0 20 * * *' # 17:00 BRT
+    - cron: '0 1 * * *'  # 22:00 BRT
+  workflow_dispatch:
 
 jobs:
   transmitir:
@@ -16,7 +16,7 @@ jobs:
     - name: Baixar arquivos do projeto
       uses: actions/checkout@v3
 
-    - name: Instalar o FFmpeg (Programa de TV)
+    - name: Instalar o FFmpeg
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg
@@ -25,47 +25,33 @@ jobs:
       env:
         CHAVE_STREAM: ${{ secrets.CHAVE_STREAM }}
       run: |
-        # Calcula o horário oficial do Brasil de forma precisa
         HORA_AGORA=$(date -d '3 hours ago' +%H)
-        echo "A hora atual identificada no Brasil é: $HORA_AGORA:00"
+        echo "A hora atual no Brasil é: $HORA_AGORA:00"
 
-        # 1. BLOCO DA MANHÃ (Das 07:00 às 11:59)
         if [ "$HORA_AGORA" -ge 7 ] && [ "$HORA_AGORA" -lt 12 ]; then
-          echo "Ativando programação: Bloco da Manhã"
           PASTA_ATUAL="manha"
-        
-        # 2. BLOCO DA TARDE (Das 12:00 às 16:59)
         elif [ "$HORA_AGORA" -ge 12 ] && [ "$HORA_AGORA" -lt 17 ]; then
-          echo "Ativando programação: Bloco da Tarde"
           PASTA_ATUAL="tarde"
-        
-        # 3. BLOCO DA NOITE (Das 17:00 às 21:59)
         elif [ "$HORA_AGORA" -ge 17 ] && [ "$HORA_AGORA" -lt 22 ]; then
-          echo "Ativando programação: Bloco da Noite"
           PASTA_ATUAL="noite"
-        
-        # 4. BLOCO FINAL (Das 22:00 às 23:59)
         elif [ "$HORA_AGORA" -ge 22 ] && [ "$HORA_AGORA" -lt 24 ]; then
-          echo "Ativando programação: Bloco Final"
           PASTA_ATUAL="final"
         else
-          echo "Horário de madrugada. O servidor ficará desligado até as 07h."
+          echo "Madrugada. Desligado."
           exit 0
         fi
 
-        # Lê os arquivos MP4 listados dentro da pasta selecionada
+        # Lê a lista de vídeos da pasta do bloco atual
         if [ -f "video_files/${PASTA_ATUAL}/playlist.txt" ]; then
           while true; do
             while read -r link_video; do
               if [ ! -z "$link_video" ]; then
-                echo "Transmitindo vídeo do link: $link_video"
-                # Conecta com a sua Cloudflare / Servidor seguro
+                echo "Transmitindo: $link_video"
                 ffmpeg -re -i "$link_video" -c:v libx264 -preset veryfast -b:v 2000k -maxrate 2000k -bufsize 2500k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://localhost/live/$CHAVE_STREAM"
               fi
-            // Dá segurança ao loop
             done < "video_files/${PASTA_ATUAL}/playlist.txt"
           done
         else
-          echo "Erro: O arquivo playlist.txt não foi encontrado na pasta: video_files/${PASTA_ATUAL}/"
+          echo "Crie o arquivo playlist.txt em: video_files/${PASTA_ATUAL}/"
           exit 1
         fi
