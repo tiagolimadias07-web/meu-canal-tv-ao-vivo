@@ -14,53 +14,18 @@ jobs:
 
     steps:
     - name: Baixar arquivos do projeto
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Instalar o FFmpeg e Servidor de Streaming Local
+    - name: Instalar o FFmpeg
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg nodejs
-        # Cria um servidor de streaming local e independente
-        npm install -g ezstream || true
+        sudo apt-get install -y ffmpeg
 
-    - name: Rodar Playlist Inteligente por Horário
+    - name: Transmitir Sinal de TV Direto
       run: |
-        HORA_AGORA=$(date -d '3 hours ago' +%H)
-        echo "A hora atual no Brasil é: $HORA_AGORA:00"
-
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "Modo de teste manual ativo! Forçando a pasta da manhã..."
-          PASTA_ATUAL="manha"
-        elif [ "$HORA_AGORA" -ge 7 ] && [ "$HORA_AGORA" -lt 12 ]; then
-          PASTA_ATUAL="manha"
-        elif [ "$HORA_AGORA" -ge 12 ] && [ "$HORA_AGORA" -lt 17 ]; then
-          PASTA_ATUAL="tarde"
-        elif [ "$HORA_AGORA" -ge 17 ] && [ "$HORA_AGORA" -lt 22 ]; then
-          PASTA_ATUAL="noite"
-        elif [ "$HORA_AGORA" -ge 22 ] && [ "$HORA_AGORA" -lt 24 ]; then
-          PASTA_ATUAL="final"
-        else
-          echo "Madrugada. Servidor automático desligado."
-          exit 0
-        fi
-
-        if [ -f "video_files/${PASTA_ATUAL}/playlist.txt" ]; then
-          echo "Iniciando o servidor interno independente..."
-          
-          # Inicia a conversão direta do MP4 para o formato de transmissão (HLS) na pasta pública
-          mkdir -p hls
-          
-          while true; do
-            while read -r link_video; do
-              if [ ! -z "$link_video" ]; then
-                echo "Transmitindo via servidor próprio: $link_video"
-                # Converte o MP4 do Archive para pedaços de transmissão locais gerando o sinal de TV direto
-                ffmpeg -re -i "$link_video" -c:v libx264 -preset veryfast -b:v 1500k -maxrate 1500k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f hls -hls_time 4 -hls_playlist_type event hls/sinal.m3u8
-              fi
-            done < "video_files/${PASTA_ATUAL}/playlist.txt"
-            sleep 5
-          done
-        else
-          echo "Arquivo playlist.txt não encontrado."
-          exit 1
-        fi
+        # Inicia a conversao direta do video de teste de forma infinita
+        mkdir -p hls
+        echo "Iniciando a transmissão direta no site..."
+        
+        # Link de teste oficial estável integrado direto no motor do servidor
+        ffmpeg -re -stream_loop -1 -i "https://googleapis.com" -c:v libx264 -preset veryfast -b:v 1500k -maxrate 1500k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f hls -hls_time 4 -hls_list_size 5 -hls_flags delete_segments hls/sinal.m3u8
