@@ -2,11 +2,11 @@ name: Web TV CANAL 040
 
 on:
   schedule:
-    - cron: '0 10 * * *' # 07:00 BRT
-    - cron: '0 15 * * *' # 12:00 BRT
-    - cron: '0 20 * * *' # 17:00 BRT
-    - cron: '0 1 * * *'  # 22:00 BRT
-  workflow_dispatch:
+    - cron: '0 10 * * *' # 07:00 BRT - Liga Bloco da Manhã
+    - cron: '0 15 * * *' # 12:00 BRT - Liga Bloco da Tarde
+    - cron: '0 20 * * *' # 17:00 BRT - Liga Bloco da Noite
+    - cron: '0 1 * * *'  # 22:00 BRT - Liga Bloco Final
+  workflow_dispatch:     # Permite ligar manualmente para testes
 
 jobs:
   transmitir:
@@ -22,13 +22,15 @@ jobs:
         sudo apt-get install -y ffmpeg
 
     - name: Rodar Playlist Inteligente por Horário
-      env:
-        CHAVE_STREAM: ${{ secrets.CHAVE_STREAM }}
       run: |
         HORA_AGORA=$(date -d '3 hours ago' +%H)
         echo "A hora atual no Brasil é: $HORA_AGORA:00"
 
-        if [ "$HORA_AGORA" -ge 7 ] && [ "$HORA_AGORA" -lt 12 ]; then
+        # FORÇA O TESTE DA MADRUGADA: Se você ligar o botão manualmente à noite, ele vai ler a pasta da manhã
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "Ativando modo de teste manual! Forçando a pasta da manhã..."
+          PASTA_ATUAL="manha"
+        elif [ "$HORA_AGORA" -ge 7 ] && [ "$HORA_AGORA" -lt 12 ]; then
           PASTA_ATUAL="manha"
         elif [ "$HORA_AGORA" -ge 12 ] && [ "$HORA_AGORA" -lt 17 ]; then
           PASTA_ATUAL="tarde"
@@ -37,21 +39,24 @@ jobs:
         elif [ "$HORA_AGORA" -ge 22 ] && [ "$HORA_AGORA" -lt 24 ]; then
           PASTA_ATUAL="final"
         else
-          echo "Madrugada. Desligado."
+          echo "Madrugada. O servidor automático foi desligado."
           exit 0
         fi
 
-        # Lê a lista de vídeos da pasta do bloco atual
+        # Lê a lista de vídeos da pasta selecionada
         if [ -f "video_files/${PASTA_ATUAL}/playlist.txt" ]; then
+          echo "Iniciando a transmissão contínua da lista..."
           while true; do
             while read -r link_video; do
               if [ ! -z "$link_video" ]; then
-                echo "Transmitindo: $link_video"
-                ffmpeg -re -i "$link_video" -c:v libx264 -preset veryfast -b:v 2000k -maxrate 2000k -bufsize 2500k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://localhost/live/$CHAVE_STREAM"
+                echo "Transmitindo agora o vídeo: $link_video"
+                # ROTA CORRIGIDA: Transmite o vídeo direto para a sua ponte de segurança da Cloudflare
+                ffmpeg -re -i "$link_video" -c:v libx264 -preset veryfast -b:v 2000k -maxrate 2000k -bufsize 2500k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://twilight-art-b8e6.tiagolimadias07.workers.dev/live/sinal"
               fi
             done < "video_files/${PASTA_ATUAL}/playlist.txt"
+            sleep 5 # Pequena pausa de segurança entre os loops
           done
         else
-          echo "Crie o arquivo playlist.txt em: video_files/${PASTA_ATUAL}/"
+          echo "Erro crítico: O arquivo playlist.txt não existe em: video_files/${PASTA_ATUAL}/"
           exit 1
         fi
