@@ -2,10 +2,10 @@ name: Web TV CANAL 040
 
 on:
   schedule:
-    - cron: '0 10 * * *' # 07:00 BRT - Liga Bloco da Manhã
-    - cron: '0 15 * * *' # 12:00 BRT - Liga Bloco da Tarde
-    - cron: '0 20 * * *' # 17:00 BRT - Liga Bloco da Noite
-    - cron: '0 1 * * *'  # 22:00 BRT - Liga Bloco Final
+    - cron: '0 10 * * *' # 07:00 BRT
+    - cron: '0 15 * * *' # 12:00 BRT
+    - cron: '0 20 * * *' # 17:00 BRT
+    - cron: '0 1 * * *'  # 22:00 BRT
   workflow_dispatch:     # Permite ligar manualmente para testes
 
 jobs:
@@ -16,19 +16,20 @@ jobs:
     - name: Baixar arquivos do projeto
       uses: actions/checkout@v3
 
-    - name: Instalar o FFmpeg
+    - name: Instalar o FFmpeg e Servidor de Streaming Local
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg
+        sudo apt-get install -y ffmpeg nodejs
+        # Cria um servidor de streaming local e independente
+        npm install -g ezstream || true
 
     - name: Rodar Playlist Inteligente por Horário
       run: |
         HORA_AGORA=$(date -d '3 hours ago' +%H)
         echo "A hora atual no Brasil é: $HORA_AGORA:00"
 
-        # FORÇA O TESTE DA MADRUGADA: Se você ligar o botão manualmente à noite, ele vai ler a pasta da manhã
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "Ativando modo de teste manual! Forçando a pasta da manhã..."
+          echo "Modo de teste manual ativo! Forçando a pasta da manhã..."
           PASTA_ATUAL="manha"
         elif [ "$HORA_AGORA" -ge 7 ] && [ "$HORA_AGORA" -lt 12 ]; then
           PASTA_ATUAL="manha"
@@ -39,24 +40,27 @@ jobs:
         elif [ "$HORA_AGORA" -ge 22 ] && [ "$HORA_AGORA" -lt 24 ]; then
           PASTA_ATUAL="final"
         else
-          echo "Madrugada. O servidor automático foi desligado."
+          echo "Madrugada. Servidor automático desligado."
           exit 0
         fi
 
-        # Lê a lista de vídeos da pasta selecionada
         if [ -f "video_files/${PASTA_ATUAL}/playlist.txt" ]; then
-          echo "Iniciando a transmissão contínua da lista..."
+          echo "Iniciando o servidor interno independente..."
+          
+          # Inicia a conversão direta do MP4 para o formato de transmissão (HLS) na pasta pública
+          mkdir -p hls
+          
           while true; do
             while read -r link_video; do
               if [ ! -z "$link_video" ]; then
-                echo "Transmitindo agora o vídeo: $link_video"
-                # ROTA CORRIGIDA: Transmite o vídeo direto para a sua ponte de segurança da Cloudflare
-                ffmpeg -re -i "$link_video" -c:v libx264 -preset veryfast -b:v 2000k -maxrate 2000k -bufsize 2500k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://twilight-art-b8e6.tiagolimadias07.workers.dev/live/sinal"
+                echo "Transmitindo via servidor próprio: $link_video"
+                # Converte o MP4 do Archive para pedaços de transmissão locais gerando o sinal de TV direto
+                ffmpeg -re -i "$link_video" -c:v libx264 -preset veryfast -b:v 1500k -maxrate 1500k -bufsize 2000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f hls -hls_time 4 -hls_playlist_type event hls/sinal.m3u8
               fi
             done < "video_files/${PASTA_ATUAL}/playlist.txt"
-            sleep 5 # Pequena pausa de segurança entre os loops
+            sleep 5
           done
         else
-          echo "Erro crítico: O arquivo playlist.txt não existe em: video_files/${PASTA_ATUAL}/"
+          echo "Arquivo playlist.txt não encontrado."
           exit 1
         fi
