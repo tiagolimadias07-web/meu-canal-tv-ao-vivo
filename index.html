@@ -52,9 +52,9 @@
             100% { opacity: 1; }
         }
 
-        /* ⚪ AJUSTE DE CORES: CANAL FICA BRANCO, 040 FICA AZUL 🟦 */
+        /* ⚪ CANAL FICA BRANCO E O 040 FICA AZUL 🟦 */
         h1 {
-            color: #ffffff; /* Define o padrão do título como branco */
+            color: #ffffff;
             margin: 0 0 5px 0;
             font-size: 3.5rem;
             letter-spacing: 2px;
@@ -62,7 +62,7 @@
             text-transform: uppercase;
         }
         .destaque-azul {
-            color: #007bff; /* Pinta apenas o número de azul brilhante */
+            color: #007bff;
         }
 
         p {
@@ -174,13 +174,10 @@
 <body>
 
     <header>
-        <!-- 🔴 Tag de Status "AO VIVO" Ampliada -->
         <div class="status-ao-vivo">
             <div class="bola-vermelha"></div>
             <span>AO VIVO</span>
         </div>
-        
-        <!-- ⚪ CANAL fica branco e o 040 fica azul 🟦 -->
         <h1>CANAL <span class="destaque-azul">040</span></h1>
         <p>Acompanhe nossa programação diária ao vivo</p>
     </header>
@@ -241,62 +238,33 @@
     <script src="https://zencdn.net"></script>
 
     <script>
-        const tempoAgora = Math.floor(Date.now() / 1000);
-        const tempoExpira = tempoAgora + 600; 
-        const linkBaseCloudflare = "https://twilight-art-b8e6.tiagolimadias07.workers.dev/live.m3u8";
-        var player = videojs('player-webtv');
-        player.src({ src: `${linkBaseCloudflare}?token=Ativo&exp=${tempoExpira}`, type: 'application/x-mpegURL' });
+       // 📥 BASTA COLOCAR OS SEUS LINKS DO ARCHIVE.ORG EM CADA HORÁRIO ABAIXO:
+const linkManha = "https://googleapis.com"; // 07:00 às 12:00
+const linkTarde = "https://googleapis.com"; // 12:00 às 17:00
+const linkNoite = "https://googleapis.com"; // 17:00 às 22:00
+const linkFinal = "https://googleapis.com"; // 22:00 às 07:00
 
-        function gerenciarProgressoFixo() {
-            const agora = new Date();
-            const hora = agora.getHours();
-            const minuto = agora.getMinutes();
-            const minutosHoje = (hora * 60) + minuto;
+// ⏰ O Sistema Inteligente escolhe o vídeo sozinho de acordo com a hora!
+function atualizarTransmissaoAutomatica() {
+    const agora = new Date();
+    const hora = agora.getHours();
+    let videoEscolhido = linkFinal; // Padrão da madrugada
 
-            document.querySelectorAll('.epg-linha').forEach(l => l.classList.remove('no-ar'));
-            document.querySelectorAll('.barra-progresso').forEach(b => b.style.width = '0%');
+    if (hora >= 7 && hora < 12) {
+        videoEscolhido = linkManha;
+    } else if (hora >= 12 && hora < 17) {
+        videoEscolhido = linkTarde;
+    } else if (hora >= 17 && hora < 22) {
+        videoEscolhido = linkNoite;
+    }
 
-            let inicioBloco = 0;
-            let duracaoBloco = 0;
-            let barraId = "";
-            let linhaId = "";
+    // Faz o player carregar o vídeo certo se ele mudar de horário
+    var player = videojs('player-webtv');
+    if (player.src() !== videoEscolhido) {
+        player.src({ src: videoEscolhido, type: 'video/mp4' });
+    }
+}
 
-            if (hora >= 7 && hora < 12) {
-                inicioBloco = 7 * 60;
-                duracaoBloco = 5 * 60;
-                barraId = "barra-7";
-                linhaId = "bloco-7";
-            } 
-            else if (hora >= 12 && hora < 17) {
-                inicioBloco = 12 * 60;
-                duracaoBloco = 5 * 60;
-                barraId = "barra-12";
-                linhaId = "bloco-12";
-            } 
-            else if (hora >= 17 && hora < 22) {
-                inicioBloco = 17 * 60;
-                duracaoBloco = 5 * 60;
-                barraId = "barra-17";
-                linhaId = "bloco-17";
-            } 
-            else if (hora >= 22 && hora < 24) {
-                inicioBloco = 22 * 60;
-                duracaoBloco = 2 * 60;
-                barraId = "barra-22";
-                linhaId = "bloco-22";
-            }
+// Roda a verificação de horário assim que o site abre
+atualizarTransmissaoAutomatica();
 
-            if (barraId !== "") {
-                document.getElementById(linhaId).classList.add('no-ar');
-                const progressoMinutos = minutosHoje - inicioBloco;
-                const porcentagem = (progressoMinutos / duracaoBloco) * 100;
-                document.getElementById(barraId).style.width = porcentagem + "%";
-            }
-        }
-
-        gerenciarProgressoFixo();
-        setInterval(gerenciarProgressoFixo, 5000);
-    </script>
-
-</body>
-</html>
