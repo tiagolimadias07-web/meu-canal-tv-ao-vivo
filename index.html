@@ -243,7 +243,7 @@
     <script>
         const tempoAgora = Math.floor(Date.now() / 1000);
         const tempoExpira = tempoAgora + 600; 
-        const linkBaseCloudflare = "https://workers.dev";
+        const linkBaseCloudflare = "https://twilight-art-b8e6.tiagolimadias07.workers.dev/live.m3u8";
         var player = videojs('player-webtv');
         player.src({ src: `${linkBaseCloudflare}?token=Ativo&exp=${tempoExpira}`, type: 'application/x-mpegURL' });
 
