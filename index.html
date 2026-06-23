@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CANAL 040 - Ao Vivo</title>
     
+    <!-- Biblioteca HLS: O receptor que transforma o sinal RTMP/HLS em imagem -->
+    <script src="https://jsdelivr.net"></script>
+    
     <style>
         body {
             background-color: #111;
@@ -49,7 +52,7 @@
             100% { opacity: 1; }
         }
 
-        /*  White CANAL, Blue 040 */
+        /* ⚪ CANAL FICA BRANCO E O 040 FICA AZUL 🟦 */
         h1 {
             color: #ffffff;
             margin: 0 0 5px 0;
@@ -77,7 +80,6 @@
             margin-bottom: 30px;
         }
         
-        /* 📺 PLAYER DE VÍDEO NATIVO À PROVA DE TRAVAMENTOS */
         .video-nativo {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -85,7 +87,7 @@
             display: block;
         }
         
-        /* GUIA DE PROGRAMAÇÃO (EPG) */
+        /* 📺 GUIA DE PROGRAMAÇÃO (EPG) */
         .container-epg {
             width: 100%;
             max-width: 854px;
@@ -183,11 +185,8 @@
     </header>
 
     <div class="container-tv">
-        <!-- Player universal que aceita qualquer link direto sem restrições -->
-        <video id="player-webtv" class="video-nativo" controls autoplay muted preload="auto">
-            <source id="origem-video" src="" type="video/mp4">
-            Seu navegador não suporta este reprodutor.
-        </video>
+        <!-- Player configurado para receber o sinal contínuo da transmissão -->
+        <video id="player-webtv" class="video-nativo" controls autoplay muted preload="auto"></video>
     </div>
 
     <div class="container-epg">
@@ -238,52 +237,61 @@
     </footer>
 
     <script>
-        // 📥 ABAIXO VOCÊ COLA OS SEUS LINKS MP4 DO ARCHIVE.ORG EM CADA HORÁRIO
-        const linkManha = "https://archive.org/download/improdmntrscp-001/IMPRODMNTRSCP001.mp4"; // 07h às 12h
-        const linkTarde = "COLE_AQUI_O_SEU_LINK_DO_ARCHIVE_QUE_TERMINA_EM_.mp4 ; // 12h às 17h
-        const linkManha = "COLE_AQUI_O_SEU_LINK_DO_ARCHIVE_QUE_TERMINA_EM_.mp4"; // 17h às 22h
-        const linkTarde = "COLE_AQUI_O_SEU_LINK_DO_ARCHIVE_QUE_TERMINA_EM_.mp4"; // 22h às 07h
-"; // 12h às 17h
-        const linkNoite = "https://archive.org/download/improdmntrscp-001/IMPRODMNTRSCP001.mp4"; // 17h às 22h
-        const linkFinal = "https://googleapis.com"; // 22h às 07h
+        // 🔗 CONEXÃO COM O SEU LINK DE TRANSMISSÃO DA CLOUDFLARE COM TOKEN TEMPORÁRIO
+        const linkTransmissaoStream = "https://workers.dev";
 
-        function gerenciarGradeETv() {
+        const video = document.getElementById('player-webtv');
+
+        // Ativa o receptor de sinal de TV (HLS) dentro do navegador
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(linkTransmissaoStream);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play().catch(e => console.log("Aguardando clique para iniciar áudio/vídeo"));
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Suporte nativo para Safari (celulares iPhone)
+            video.src = linkTransmissaoStream;
+            video.addEventListener('loadedmetadata', function() {
+                video.play();
+            });
+        }
+
+        function gerenciarProgressoFixo() {
             const agora = new Date();
             const hora = agora.getHours();
             const minuto = agora.getMinutes();
             const minutosHoje = (hora * 60) + minuto;
 
-            // 1. Escolha automática do vídeo com base no relógio do usuário
-            let videoEscolhido = linkFinal;
-            let inicioBloco = 22 * 60;
-            let duracaoBloco = 9 * 60; // Madrugada inteira
-            let barraId = "barra-22";
-            let linhaId = "bloco-22";
-
-            if (hora >= 7 && hora < 12) {
-                videoEscolhido = linkManha; inicioBloco = 7 * 60; duracaoBloco = 5 * 60; barraId = "barra-7"; linhaId = "bloco-7";
-            } else if (hora >= 12 && hora < 17) {
-                videoEscolhido = linkTarde; inicioBloco = 12 * 60; duracaoBloco = 5 * 60; barraId = "barra-12"; linhaId = "bloco-12";
-            } else if (hora >= 17 && hora < 22) {
-                videoEscolhido = linkNoite; inicioBloco = 17 * 60; duracaoBloco = 5 * 60; barraId = "barra-17"; linhaId = "bloco-17";
-            }
-
-            // Altera a origem do player nativo caso o horário vire
-            const elementoVideo = document.getElementById('player-webtv');
-            const elementoSource = document.getElementById('origem-video');
-            
-            if (elementoSource && elementoSource.src !== videoEscolhido) {
-                elementoSource.src = videoEscolhido;
-                elementoVideo.load();
-                elementoVideo.play().catch(e => console.log("Aguardando clique para reproduzir"));
-            }
-
-            // 2. Movimentação da Barra Azul do EPG
             document.querySelectorAll('.epg-linha').forEach(l => l.classList.remove('no-ar'));
             document.querySelectorAll('.barra-progresso').forEach(b => b.style.width = '0%');
 
-            const elementoLinha = document.getElementById(linhaId);
-            if(elementoLinha) elementoLinha.classList.add('no-ar');
-            
-            const progressoMinutos = minutosHoje < inicioBloco ? (minutosHoje + 1440) - inicioBloco : minutosHoje - inicioBloco;
-            const porcentagem = (progressoMinutos / duracaoBloco) * 100;
+            let inicioBloco = 0; let duracaoBloco = 0; let barraId = ""; let linhaId = "";
+
+            if (hora >= 7 && hora < 12) {
+                inicioBloco = 7 * 60; duracaoBloco = 5 * 60; barraId = "barra-7"; linhaId = "bloco-7";
+            } else if (hora >= 12 && hora < 17) {
+                inicioBloco = 12 * 60; duracaoBloco = 5 * 60; barraId = "barra-12"; linhaId = "bloco-12";
+            } else if (hora >= 17 && hora < 22) {
+                inicioBloco = 17 * 60; duracaoBloco = 5 * 60; barraId = "barra-17"; linhaId = "bloco-17";
+            } else if (hora >= 22 || hora < 7) {
+                inicioBloco = 22 * 60; duracaoBloco = 9 * 60; barraId = "barra-22"; linhaId = "bloco-22";
+            }
+
+            if (barraId !== "") {
+                const elementoLinha = document.getElementById(linhaId);
+                if(elementoLinha) elementoLinha.classList.add('no-ar');
+                const progressoMinutos = minutosHoje < inicioBloco ? (minutosHoje + 1440) - inicioBloco : minutosHoje - inicioBloco;
+                const porcentagem = (progressoMinutos / duracaoBloco) * 100;
+                const elementoBarra = document.getElementById(barraId);
+                if(elementoBarra) elementoBarra.style.width = Math.min(porcentagem, 100) + "%";
+            }
+        }
+
+        gerenciarProgressoFixo();
+        setInterval(gerenciarProgressoFixo, 5000);
+    </script>
+
+</body>
+</html>
